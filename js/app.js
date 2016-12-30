@@ -79,6 +79,48 @@ var getUnanswered = function(tags) {
 		});
 };
 
+var getInspiration = function(answerers) {
+	
+	var request = { 
+					tagged: answerers,
+					site: 'stackoverflow',
+					order: 'desc',
+					sort: 'creation'
+				};
+	
+	$.ajax({
+		url: "http://api.stackexchange.com/2.2/tags/" + answerers + "/top-answerers/month",
+		data: request,
+		dataType: "jsonp",
+		type: "GET",
+		})
+		.done(function(result){
+			var searchResults = showSearchResults(answerers, result.items.length);
+
+			$('.search-results').html(searchResults);
+
+			$.each(result.items, function(i, item) {
+				var inspire = showInspiration(item);
+				$('.results').append(inspire);
+			});
+		})
+		.fail(function(jqXHR, error){
+			var errorElem = showError(error);
+			$('.search-results').append(errorElem);
+		});
+};
+
+var showInspiration = function(item) {
+	var result = $('.templates .inspiration').clone();
+	var user = result.find('.user a')
+		.attr('href', item.user.link)
+		.text(item.user.display_name);
+	result.find('.reputation').text('Reputation: ' + item.user.reputation);
+	result.find('.post_count').text(item.post_count);
+	result.find('.score').text(item.score);
+
+	return result;
+};
 
 $(document).ready( function() {
 	$('.unanswered-getter').submit( function(){
@@ -86,6 +128,16 @@ $(document).ready( function() {
 		$('.results').html('');
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
+		$(this).find("input[name='tags']").val('');
 		getUnanswered(tags);
+	});
+
+	$('.inspiration-getter').submit( function(){
+		// zero out results if previous search has run
+		$('.results').html('');
+		// get the value of the tags the user submitted
+		var answerers = $(this).find("input[name='answerers']").val();
+		$(this).find("input[name='answerers']").val('');
+		getInspiration(answerers);
 	});
 });
